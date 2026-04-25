@@ -7,44 +7,45 @@ from cocotb.triggers import ClockCycles
 
 
 @cocotb.test()
-async def test_aquapay_chip(dut):
-    dut._log.info("Start AquaPay Test")
+async def test_aquapay_basic_flow(dut):
+    dut._log.info("Starting AquaPay test")
 
-    # Clock = 100 kHz
+    # Clock: 100 KHz
     clock = Clock(dut.clk, 10, unit="us")
     cocotb.start_soon(clock.start())
 
-    # Reset
+    # ---------------- RESET ----------------
     dut.ena.value = 1
     dut.ui_in.value = 0
     dut.uio_in.value = 0
     dut.rst_n.value = 0
 
-    await ClockCycles(dut.clk, 10)
+    await ClockCycles(dut.clk, 5)
     dut.rst_n.value = 1
 
-    dut._log.info("Insert ₹2 coin")
+    await ClockCycles(dut.clk, 2)
 
-    # ₹2 coin (ui_in[1])
-    dut.ui_in.value = 0b00000010
-
+    # ---------------- INSERT COIN (₹1) ----------------
+    dut.ui_in.value = 0b00000001  # coin_1
     await ClockCycles(dut.clk, 1)
-
-    # remove coin
     dut.ui_in.value = 0
 
-    # simulate flow sensor pulses
-    for i in range(6):
-        dut.ui_in.value = 0b00010000  # flow_sensor = ui_in[4]
+    # ---------------- WAIT FOR STATE MACHINE ----------------
+    await ClockCycles(dut.clk, 5)
+
+    # ---------------- CHECK VALVE OPENS ----------------
+    assert dut.uo_out.value[0] == 1, "Valve should be ON after coin input"
+
+    # ---------------- SIMULATE FLOW SENSOR ----------------
+    for _ in range(10):
+        dut.ui_in.value = 0b00010000  # flow_sensor = 1
         await ClockCycles(dut.clk, 1)
-        dut.ui_in.value = 0
-        await ClockCycles(dut.clk, 1)
 
-    dut._log.info("Check valve and output")
+    dut.ui_in.value = 0
 
-    # valve should have turned ON at some point
-    # (we don't force exact cycle timing, FSM dependent)
+    await ClockCycles(dut.clk, 5)
 
-    assert dut.uo_out.value[0] in [0, 1], "Valve signal invalid"
+    # ---------------- CHECK SYSTEM STILL WORKING ----------------
+    assert dut.uo_out.value is not None, "Output should exist"
 
-    dut._log.info("Test complete")
+    dut._log.info("AquaPay test completed successfully")
