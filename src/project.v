@@ -11,14 +11,14 @@ module tt_um_aquapay_chip (
     input  wire       rst_n
 );
 
-  // ---------------- INPUT MAPPING ----------------
   wire coin_1      = ui_in[0];
   wire coin_2      = ui_in[1];
   wire coin_5      = ui_in[2];
   wire coin_10     = ui_in[3];
   wire flow_sensor = ui_in[4];
 
-  // ---------------- INTERNAL REGS ----------------
+  wire rst = ~rst_n;
+
   reg valve_on;
   reg [7:0] liters;
 
@@ -29,14 +29,10 @@ module tt_um_aquapay_chip (
   reg [15:0] timer;
   reg [15:0] time_limit;
 
-  // flow edge detection
-  reg flow_d;
-
   localparam IDLE=0, SET=1, DISP=2, DONE=3;
 
-  // ---------------- FSM LOGIC ----------------
-  always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
+  always @(posedge clk or posedge rst) begin
+    if (rst) begin
         state <= IDLE;
         liters <= 0;
         valve_on <= 0;
@@ -44,26 +40,20 @@ module tt_um_aquapay_chip (
         target <= 0;
         timer <= 0;
         time_limit <= 0;
-        flow_d <= 0;
     end else begin
-
-        flow_d <= flow_sensor; // store previous value
-
         case(state)
 
-        // -------- IDLE --------
         IDLE: begin
             liters <= 0;
             valve_on <= 0;
             timer <= 0;
 
-            if (coin_1)      begin coin_reg <= 1;  state <= SET; end
-            else if (coin_2) begin coin_reg <= 2;  state <= SET; end
-            else if (coin_5) begin coin_reg <= 5;  state <= SET; end
-            else if (coin_10)begin coin_reg <= 10; state <= SET; end
+            if (coin_1)       begin coin_reg <= 1;  state <= SET; end
+            else if (coin_2)  begin coin_reg <= 2;  state <= SET; end
+            else if (coin_5)  begin coin_reg <= 5;  state <= SET; end
+            else if (coin_10) begin coin_reg <= 10; state <= SET; end
         end
 
-        // -------- SET --------
         SET: begin
             case(coin_reg)
                 1:  begin target <= 2;  time_limit <= 20;  end
@@ -77,13 +67,11 @@ module tt_um_aquapay_chip (
             state <= DISP;
         end
 
-        // -------- DISP --------
         DISP: begin
             valve_on <= 1;
             timer <= timer + 1;
 
-            // count ONLY on rising edge
-            if (flow_sensor && !flow_d)
+            if (flow_sensor)
                 liters <= liters + 1;
 
             if ((liters >= target && target != 0) || (timer >= time_limit)) begin
@@ -92,7 +80,6 @@ module tt_um_aquapay_chip (
             end
         end
 
-        // -------- DONE --------
         DONE: begin
             state <= IDLE;
         end
@@ -101,11 +88,10 @@ module tt_um_aquapay_chip (
     end
   end
 
-  // ---------------- OUTPUT MAPPING ----------------
+  // OUTPUTS
   assign uo_out[0] = valve_on;
   assign uo_out[7:1] = liters[6:0];
 
-  // ---------------- UNUSED ----------------
   assign uio_out = 8'b0;
   assign uio_oe  = 8'b0;
 
