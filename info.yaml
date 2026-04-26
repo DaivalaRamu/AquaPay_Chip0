@@ -1,25 +1,37 @@
+yaml_version: 6
+
 project:
-  title: "AquaPay_Chip0"
+  title: "AquaPay Chip"
   author: "Ramu"
-  description: "Coin-based water dispensing system using flow sensor and timer control"
-  language: "verilog"
-  source_files:
-    - project.v
+  description: "Your project description"
+  tiles: "1x1"
+  top_module: "tt_um_aquapay"
+  clock_hz: 25000000
 
 pinout:
-  ui[0]: coin_1
-  ui[1]: coin_2
-  ui[2]: coin_5
-  ui[3]: coin_10
-  ui[4]: flow_sensor
+  ui[0]: "input0"
+  ui[1]: "input1"
+  ui[2]: "input2"
+  ui[3]: "input3"
+  ui[4]: "input4"
+  ui[5]: "input5"
+  ui[6]: "input6"
+  ui[7]: "input7"
 
-  uo[0]: valve_on
-  uo[1]: liters_bit0
-  uo[2]: liters_bit1
-  uo[3]: liters_bit2
-  uo[4]: liters_bit3
-  uo[5]: liters_bit4
-  uo[6]: liters_bit5
-  uo[7]: liters_bit6
+  uo[0]: "output0"
+  uo[1]: "output1"
+  uo[2]: "output2"
+  uo[3]: "output3"
+  uo[4]: "output4"
+  uo[5]: "output5"
+  uo[6]: "output6"
+  uo[7]: "output7"
 
-  uio[7:0]: unused
+  uio[0]: "io0"
+  uio[1]: "io1"
+  uio[2]: "io2"
+  uio[3]: "io3"
+  uio[4]: "io4"
+  uio[5]: "io5"
+  uio[6]: "io6"
+  uio[7]: "io7"
